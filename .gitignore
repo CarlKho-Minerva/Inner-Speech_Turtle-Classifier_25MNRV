@@ -1,3 +1,7 @@
+# 25 GB - too large.
+# Get by running `aws s3 sync --no-sign-request s3://openneuro.org/ds003626 ds003626-download/`
+dataset/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
