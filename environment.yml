@@ -8,6 +8,6 @@ dependencies:
   - pip
   - matplotlib
   - numpy
-  - spyder=4.2.1
+  - spyder
   - pip:
      - pickle-mixin

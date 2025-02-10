@@ -11,13 +11,13 @@ import mne
 import gc
 import os
 import numpy as np
-from Inner_Speech_Dataset.Python_Processing.Utilitys import sub_name, unify_names       # noqa
+from Python_Processing.Utilitys import sub_name, unify_names       # noqa
 import pickle
 from mne.io import Raw
+from typing import Tuple, List, Union, Any
 
 
-def extract_subject_from_bdf(root_dir: str, n_s:
-                             int, n_b: int) -> tuple[Raw, str]:
+def extract_subject_from_bdf(root_dir: str, n_s: int, n_b: int) -> Tuple[Raw, str]:
     """
     Extracts raw EEG data from a BDF file for a specific subject and block.
 
