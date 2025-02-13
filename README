@@ -1,0 +1,8 @@
+Clone [Inner_Speech_Data](https://github.com/N-Nieto/Inner_Speech_Dataset)
+
+Install python modules:
+
+- mne
+- numpy
+- scikit-learn
+- ipywidgets
