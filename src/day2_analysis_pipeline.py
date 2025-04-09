@@ -129,8 +129,8 @@ def run_pairwise_analysis_enhanced(subject_list, datatype, t_start, t_end, Condi
         for subject in subject_list:
             print(f"Processing subject {subject}...")
             try:
-                # Load data (adjust root_dir if necessary, assuming 'dataset' is accessible)
-                X_subj, Y_subj = extract_data_from_subject("dataset", subject, datatype)
+                # Load data with correct path to dataset directory
+                X_subj, Y_subj = extract_data_from_subject("src/dataset", subject, datatype)
                 X_subj = select_time_window(X=X_subj, t_start=t_start, t_end=t_end, fs=fs)
                 X_filtered, Y_filtered = transform_for_classificator(X_subj, Y_subj, Classes, Conditions)
                 if len(np.unique(Y_filtered)) > 1 and len(Y_filtered) > 0:

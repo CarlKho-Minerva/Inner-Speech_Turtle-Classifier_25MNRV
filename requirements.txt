@@ -1,4 +1,8 @@
+matplotlib
 mne
 numpy
+pandas
+pickle-mixin
 scikit-learn
-ipywidgets
+scipy
+seaborn
