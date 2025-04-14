@@ -98,17 +98,18 @@ This machine learning framework allowed for systematic training and evaluation o
     *   Shifted from single-subject analysis to combining data from all 10 subjects (#`day1.py` lines 97-172, #`logs/day1_devlog.md` Phase 1).
     *   *Rationale:* Leverage common neural patterns across individuals to build a more generalizable model and increase dataset size.
     *   Loaded and combined data, filtering for the "Inner" condition and "Up"/"Down" classes (#`day1.py` lines 103-172).
+    *   *Visualization:* The average EEG signal plot below shows the combined data for "Up" vs "Down" trials across subjects. While differences are subtle visually, this combined dataset forms the basis for feature extraction.
 
-2.  **Focused Time Window:**
+        ![Average EEG Signal Comparison](figures/avg_signal_comparison.png)
+        *Figure 1: Average EEG signal (microvolts) over time (seconds) at a central electrode (Cz assumed), averaged across all 10 subjects for "Up" (blue) vs "Down" (red) inner speech trials within the 1.5s-3.5s analysis window. Shaded areas represent the standard deviation across trials. The overlapping waveforms highlight the challenge in distinguishing these states based solely on the average time-domain signal at a single electrode.*\n\n2.  **Focused Time Window:**
     *   Consistently applied a time window of 1.5s to 3.5s post-cue for analysis (#`day1.py` lines 64-67, #`logs/day1_devlog.md` Phase 2).
     *   *Rationale:* Target the time segment where the inner speech task execution is most likely occurring.
 
 3.  **Advanced Feature Engineering:**
     *   **Frequency Band Power:** Extracted Power Spectral Density (PSD) features using Welch's method for Theta, Alpha, Beta, and Gamma bands (#`day1.py` lines 231-288, #`logs/day1_devlog.md` Phase 2).
         *   *Rationale:* Capture task-related modulations in brain oscillations.
-    *   **Common Spatial Patterns (CSP):** Implemented CSP (`n_components=6`) to find spatial filters maximizing variance between "Up" and "Down" classes (#`day1.py` lines 318-356, #`logs/day1_devlog.md` Phase 2).
-        *   *Rationale:* Identify discriminative scalp topographies related to the mental tasks. Visualized CSP patterns (#`day1.py` lines 357-396).
-    *   **Feature Combination:** Concatenated frequency and CSP features into a single feature vector per trial (#`day1.py` lines 398-400, #`logs/day1_devlog.md` Phase 3).
+    *   **Common Spatial Patterns (CSP):** Implemented CSP (`n_components=6`) to find spatial filters maximizing variance between "Up" and "Down" classes (#`day1.py` lines 318-356, #`logs/day1_devlog.md` Phase 2).\n        *   *Rationale:* Identify discriminative scalp topographies related to the mental tasks. Visualized CSP patterns (#`day1.py` lines 357-396). The figure below shows examples of these spatial filters.\n\n        ![CSP Patterns](figures/csp_patterns.png)
+        *Figure 2: Example Common Spatial Patterns (CSP) filters learned by the model for the "Inner Up" vs "Inner Down" task. These represent spatial weightings across the scalp (top-down view, nose up). Red/blue areas indicate electrode locations contributing positively/negatively to maximizing the variance difference between the two classes. These patterns suggest which scalp regions show the most discriminative activity, although interpreting them directly as specific brain sources requires caution.*\n    *   **Feature Combination:** Concatenated frequency and CSP features into a single feature vector per trial (#`day1.py` lines 398-400, #`logs/day1_devlog.md` Phase 3).
 
 4.  **Sophisticated Classification Pipeline:**
     *   **Feature Selection:** Applied `SelectKBest` (k=50, f_classif) to reduce dimensionality and select the most discriminative features from the combined set (#`day1.py` lines 401-432, #`logs/day1_devlog.md` Phase 3).
@@ -120,9 +121,8 @@ This machine learning framework allowed for systematic training and evaluation o
 5.  **Evaluation & Comparison:**
     *   Evaluated the tuned individual models and the ensemble model on the held-out test set (#`day1.py` lines 534-560).
     *   Generated confusion matrices and classification reports for detailed performance analysis (#`day1.py` lines 561-575, #`day1_ui.py` lines 684-695).
-    *   Compared the best model's accuracy against a baseline (SVM on flattened raw data) and chance level (#`day1.py` lines 577-603, #`logs/day1_devlog.md` Evaluation).
-
-6.  **Caching Implementation:**
+    *   Compared the best model\'s accuracy against a baseline (SVM on flattened raw data) and chance level (#`day1.py` lines 577-603, #`logs/day1_devlog.md` Evaluation). The accuracy comparison plot is shown below.\n\n        ![Model Accuracy Comparison](figures/model_comparison.png)
+        *Figure 3: Comparison of test accuracies (%) for the baseline model, individual tuned classifiers (SVM, RF, LDA), and the final ensemble model against chance level (50%, dashed red line) specifically for the challenging "Inner Up" vs "Inner Down" task. The results clearly show that despite hyperparameter tuning and ensembling, all models performed near chance level, indicating minimal discriminative information captured by the features for this specific comparison.*\n\n6.  **Caching Implementation:**
     *   Integrated caching (`pickle`) for computationally expensive steps (data loading/processing, feature extraction, feature selection, model training) to significantly speed up iterative development and re-runs with the same parameters (#`day1.py` lines 70-95, #`logs/day1_devlog.md` Implementation Summary). Cache keys were generated based on relevant parameters.
 
 7.  **Interactive UI Development (`day1_ui.py`):**
@@ -137,8 +137,8 @@ This machine learning framework allowed for systematic training and evaluation o
 
 **Outcome:**
 *   The enhanced pipeline (multi-subject, advanced features, tuning, ensemble) was successfully implemented and tested.
-*   For the specific, challenging task of "Inner Up" vs. "Inner Down", the accuracy saw only a marginal improvement over baseline (reaching ~50.3%), indicating the high difficulty of distinguishing these subtle mental states with the current approach (#`logs/day1_devlog.md` Outcome, Analysis Results).
-*   However, the framework proved effective on easier comparisons run via the UI (e.g., Pronounced vs. Inner speech), achieving significantly higher accuracies (>80-90% in some cases, see #`logs/day1_devlog.md` Analysis Results examples), demonstrating the pipeline's capability.
+*   For the specific, challenging task of "Inner Up" vs. "Inner Down", the accuracy saw only a marginal improvement over baseline (reaching ~50.3%, see Figure 3), indicating the high difficulty of distinguishing these subtle mental states with the current approach (#`logs/day1_devlog.md` Outcome, Analysis Results). The confusion matrix below further illustrates this, showing frequent misclassifications between "Up" and "Down".\n\n    ![Ensemble Confusion Matrix](figures/confusion_matrix.png)
+    *Figure 4: Confusion matrix for the final ensemble model evaluated on the test set for the "Inner Up" vs "Inner Down" task. Rows represent the true direction, and columns represent the predicted direction. Values indicate the number of trials. The high off-diagonal counts (e.g., predicting "Down" when the true label was "Up") visually confirm the model\'s poor performance and frequent confusion between the two classes, consistent with the near-chance accuracy shown in Figure 3.*\n*   However, the framework proved effective on easier comparisons run via the UI (e.g., Pronounced vs. Inner speech), achieving significantly higher accuracies (>80-90% in some cases, see #`logs/day1_devlog.md` Analysis Results examples), demonstrating the pipeline\'s capability.
 *   The UI facilitated rapid experimentation and parameter testing.
 *   Caching dramatically improved workflow efficiency.
 
@@ -174,10 +174,93 @@ This machine learning framework allowed for systematic training and evaluation o
 *   **High Discriminability:** Comparisons involving different *Conditions* (e.g., Inner vs. Pronounced, Pronounced vs. Visualized) generally yielded high accuracies (often >80-90%), confirming distinct neural signatures for these broader task types (e.g., #`day2_devlog.md` lines 9, 19, 27, 35, 47, 55).
 *   **Low Discriminability (Within Condition):**
     *   Distinguishing between different directions *within the same Condition* proved much harder, especially for "Inner" and "Visualized" states.
-    *   Inner Speech pairs (e.g., "Inner-Up" vs. "Inner-Down", "Inner-Left" vs. "Inner-Right") consistently showed accuracies near chance level (~45-55%) (#`day2_devlog.md` lines 5, 7, 16, 17, 26).
+    *   Inner Speech pairs (e.g., "Inner-Up" vs. "Inner-Down", "Inner-Left" vs. "Inner-Right") consistently showed accuracies near chance level (~45-55%) (#`day2_devlog.md` lines 5, 7, 16, 17, 26). This aligns with the Day 1 findings (Figures 3 & 4).
     *   Visualized pairs (e.g., "Vis-Up" vs. "Vis-Down") also performed poorly (~46-54%) (#`day2_devlog.md` lines 65-70).
     *   Pronounced Speech pairs showed slightly better, but still modest, discriminability (~55-62%) (#`day2_devlog.md` lines 45, 51, 56).
 *   This systematic analysis confirmed the initial findings from Day 1: while the pipeline effectively distinguishes broader mental states (like overt vs. covert speech), differentiating subtle directional thoughts within the same modality (especially inner speech) remains extremely challenging with the current feature set and models. The results provide a comprehensive map of which mental state contrasts are neurally distinct and which are highly similar based on this EEG data and analysis approach.
+
+## Discussion
+
+The systematic pairwise classification analysis performed in `day2.py` provides a comprehensive map of the discriminability between various mental states using the developed EEG processing and machine learning pipeline. The results, summarized in #`logs/day2_pairwise_results.csv`, reveal a clear hierarchy in classification performance, offering valuable insights into both the neural signatures of these tasks and the capabilities of the current analytical approach.
+
+**How Accuracy Was Determined:**
+
+Classification accuracy, the primary metric reported (e.g., in #`logs/day2_pairwise_results.csv`), represents the percentage of trials where the machine learning model correctly predicted the mental state out of the total number of test trials presented. For each of the 66 pairs of mental states, the following pipeline (the "ML orchestra" established in #`src/day2_analysis_pipeline.py`) was applied:
+
+1.  **Data Aggregation:** EEG data from all selected subjects (1-10) corresponding to the two specific mental states being compared was loaded and combined.
+2.  **Feature Extraction:** Neuroscience-informed features were extracted:
+    *   **Frequency Power:** Average power in Theta, Alpha, Beta, and Gamma bands for each channel.
+    *   **Common Spatial Patterns (CSP):** 6 spatial filters optimized to distinguish the two specific states. Figure 2 in the Day 1 Summary shows examples of these learned spatial patterns.
+3.  **Feature Combination & Selection:** Frequency and CSP features were combined, and `SelectKBest` was used to select the top 50 most statistically relevant features for that specific pair.
+4.  **Training & Evaluation:**
+    *   The selected features were split into training (70%) and testing (30%) sets.
+    *   An **Ensemble Model** (using `VotingClassifier`) was trained on the training data. This ensemble combined the predictions of three individually optimized base classifiers: Support Vector Machine (SVM), Random Forest (RF), and Linear Discriminant Analysis (LDA). Each base classifier's parameters were tuned using `GridSearchCV` with 5-fold cross-validation *within the training set* to find its optimal configuration for that specific pair.
+    *   The final trained ensemble model's accuracy was then calculated based on its predictions on the held-out **test set**.
+
+**Interpreting the Results:**
+
+The analysis yielded three distinct tiers of performance, clearly visible in the sorted results (#`logs/day2_pairwise_results.csv`):
+
+**Top Pairwise Classification Results (from `day2_pairwise_results.csv`):**
+
+| Pair Name                 | Accuracy | F1 Score | Precision | Recall |
+| :------------------------ | :------- | :------- | :-------- | :----- |
+| Inner-Left vs Pron-Up     | 90.12    | 83.66    | 94.12     | 75.29  |
+| Inner-Up vs Pron-Down     | 89.72    | 83.33    | 91.55     | 76.47  |
+| Inner-Left vs Pron-Down   | 89.33    | 82.80    | 90.28     | 76.47  |
+| Inner-Up vs Pron-Left     | 88.93    | 81.33    | 93.85     | 71.76  |
+| Inner-Right vs Pron-Down  | 88.54    | 79.72    | 98.28     | 67.06  |
+| Inner-Down vs Pron-Up     | 88.14    | 80.00    | 92.31     | 70.59  |
+| Inner-Right vs Pron-Up    | 87.75    | 78.01    | 98.21     | 64.71  |
+| Inner-Up vs Pron-Up       | 87.75    | 78.91    | 93.55     | 68.24  |
+| Inner-Left vs Pron-Left   | 87.75    | 80.00    | 88.57     | 72.94  |
+| Inner-Right vs Pron-Left  | 87.35    | 77.46    | 96.49     | 64.71  |
+
+1.  **High Discriminability (Cross-Condition, especially involving Pronounced Speech):**
+    *   **Observation:** The pipeline achieved the highest accuracies (often 85-90%+, see table above) when distinguishing between different *types* of tasks, particularly when one task was **Pronounced Speech**. An accuracy of ~90% means the model correctly identified the task type (e.g., thinking "Left" vs. saying "Up") in approximately 9 out of 10 unseen test trials.
+    *   **Neuroscience Interpretation:** Overtly speaking involves distinct motor commands to articulators (mouth, tongue, larynx) and generates auditory feedback, resulting in strong, unique EEG patterns (e.g., motor cortex activation, auditory potentials). These patterns are fundamentally different from the purely internal processes of inner speech or visualization, which lack overt motor output.
+    *   **ML Interpretation:** The combined Frequency+CSP features effectively capture these large-scale differences in neural activity. The ensemble model, leveraging optimized SVM, RF, and LDA, can reliably learn the boundary between these clearly distinct neural states, leading to high prediction accuracy.
+    *   **Implication:** Decoding the *modality* of a mental task (e.g., speaking vs. thinking vs. visualizing) is highly feasible with this approach.
+
+2.  **Moderate Discriminability (Inner Speech vs. Visualization):**
+    *   **Observation:** Comparisons between Inner Speech and Visualized states yielded moderate accuracies (typically ~65-78%, e.g., `Inner-Right_vs_Vis-Left`: 77.6%, `Inner-Up_vs_Vis-Up`: 69.6%). An accuracy of ~75% means the model was correct about 3 out of 4 times when distinguishing between, for example, thinking "Right" and visualizing a "Left" arrow.
+    *   **Neuroscience Interpretation:** Both inner speech and visualization are internal cognitive processes, likely sharing common neural resources related to attention, working memory, and executive control. However, they should also recruit distinct modality-specific networks (e.g., language/motor planning areas for inner speech, visual cortex areas for visualization). The moderate accuracy suggests these differences exist and are detectable via EEG, but are less pronounced or more overlapping compared to the differences between covert and overt tasks.
+    *   **ML Interpretation:** The feature set captures some, but not all, of the distinguishing neural information. The model can find patterns but with less certainty, leading to more errors compared to the high-discriminability cases.
+    *   **Implication:** Distinguishing between different *types* of internal thought processes is possible but presents a greater challenge than separating internal from external actions.
+
+3.  **Low Discriminability (Within-Condition, especially Inner Speech):**
+    *   **Observation:** The most challenging task, and the primary focus of interest for many BCI applications, was distinguishing between different *directions* (Up, Down, Left, Right) within the *same* condition. Accuracies here were consistently poor, hovering near chance level (~45-55% for Inner Speech, e.g., `Inner-Up_vs_Inner-Down`: 49.1%; `Inner-Left_vs_Inner-Right`: 46.4%). Performance was only slightly better for Pronounced directions (~55-62%) and similarly poor for Visualized directions (~46-54%).
+    *   **Neuroscience Interpretation:** This strongly suggests that the neural signals encoding the specific *content* or *direction* of a thought, within a given modality like inner speech, are either very subtle, highly variable across trials/subjects, or not well captured by the scalp-level EEG signals and the chosen features (frequency power, broad spatial patterns via CSP). The dominant EEG activity might relate more to the general *process* of performing the task (e.g., engaging inner speech mechanisms) rather than the specific directional content being thought. The average signal plot (Figure 1) visually supports this, showing very similar average waveforms for "Up" and "Down" inner speech.
+    *   **ML Interpretation:** The Frequency+CSP features, even after selecting the top 50, do not provide sufficient discriminative information for the ensemble model (or its components) to reliably separate these classes. The model is essentially guessing, as reflected by accuracies near 50% (chance level for two classes). The results from `day1.py` specifically targeting "Inner-Up" vs "Inner-Down" illustrate this difficulty; despite the sophisticated pipeline, the ensemble accuracy (50.3%) was barely above the baseline (50.6%) and chance level, as shown in the comparison chart (Figure 3). The confusion matrix for this pair (Figure 4) further confirms this, showing a large number of misclassifications (high values off the main diagonal) - the model frequently confused "Up" for "Down" and vice-versa.
+    *   **Implication:** Reliably decoding the specific *content* (direction) of inner speech directly from EEG using this methodology is currently not feasible. The neural correlates are too weak or obscured by other signals at the scalp level.
+
+**Limitations and Future Directions:**
+
+The systematic pairwise analysis highlights both the strengths and weaknesses of the current approach. While successful for broad task-type classification, decoding fine-grained inner speech content requires significant improvement. Several avenues could be explored:
+
+1.  **Advanced Feature Engineering:** The current Freq+CSP features may be insufficient. Future work could explore:
+    *   *Connectivity Features:* Analyzing functional connectivity (e.g., phase-locking value, coherence) between brain regions might reveal network dynamics specific to directional thought.
+    *   *Source Localization:* Estimating the activity in specific brain regions (source space) rather than relying on scalp-level signals (sensor space) might provide cleaner signals from relevant areas like motor or language cortex.
+    *   *Riemannian Geometry:* Approaches that classify based on the geometry of covariance matrices have shown promise in BCI and might capture different aspects of the signal (#`Archive/Tutorial_otherClassifiers.md`).
+    *   *More Granular Time/Frequency Analysis:* Investigating specific sub-bands or shorter time windows might reveal transient discriminative patterns missed by the current broad analysis.
+2.  **Sophisticated Machine Learning Models:**
+    *   *Deep Learning:* Models like Convolutional Neural Networks (CNNs) or Recurrent Neural Networks (RNNs/LSTMs), potentially combined (e.g., EEGNet, Shallow/Deep ConvNet), are adept at learning complex spatial and temporal patterns directly from EEG data, potentially bypassing the need for handcrafted features like Freq/CSP.
+    *   *Subject-Specific Models:* The current cross-subject approach aims for generalizability but might wash out subtle subject-specific patterns. Training models individually for each subject, perhaps using transfer learning to leverage data from others, could yield better performance for within-condition tasks.
+3.  **Pipeline Optimization:**
+    *   *Feature Selection:* Explore alternative feature selection methods beyond `SelectKBest` or optimize the number of features (`k`) per pair.
+    *   *Model Optimization:* While `GridSearchCV` was used, more advanced optimization techniques (e.g., Bayesian optimization) could be employed. The fixed ensemble structure might also be revisited.
+4.  **Statistical Validation:** Perform permutation testing or other statistical analyses to rigorously assess whether the observed accuracies, especially those slightly above chance, are statistically significant.
+5.  **Experimental Design:** Consider if modifications to the experimental paradigm itself could elicit stronger or more distinct neural signals related to directional inner speech.
+
+**Beginner Translation:**
+
+We tried to teach a computer to read minds by looking at brainwaves (EEG). We tested if it could tell the difference between 66 pairs of mental tasks, like thinking "Up" versus saying "Up", or thinking "Left" versus thinking "Right".
+
+*   **The Good News:** The computer was very good (often 80-90% accurate, meaning right 8 or 9 times out of 10!) at telling the difference between *big* categories of tasks, like thinking versus actually speaking out loud. This is because speaking uses different brain parts and creates much stronger, different brainwave patterns. It was also okay (around 70-75% accurate, right 3 out of 4 times) at telling thinking "Up" apart from *visualizing* an "Up" arrow.
+*   **The Challenge:** The computer was really bad (around 50% accurate, basically guessing like flipping a coin) at telling the difference between similar thoughts, especially thinking "Up" versus thinking "Down", or thinking "Left" versus thinking "Right". The brainwave signals for these specific directions seem too similar or too faint for our current methods to pick up reliably from the scalp. The graphs (Figures 3 and 4) show this clearly - the accuracy is stuck near 50%, and the model mixes up "Up" and "Down" a lot.
+*   **What's Next:** To get better at reading the *specific content* of thoughts like "Up" or "Down", we need to try different ways of analyzing the brainwaves (like looking at how different brain areas communicate) or use more advanced computer learning methods (like AI similar to image recognition).
+
+In conclusion, while decoding the *type* of mental activity (speaking vs. thinking) is achievable, decoding the specific *content* of inner speech remains a significant hurdle, necessitating exploration of more advanced neuroscientific features and machine learning techniques.
 
 ## Setup and Dependencies
 
@@ -200,7 +283,7 @@ This machine learning framework allowed for systematic training and evaluation o
 
 **1. Low Discriminability of Inner Speech Directions:**
    - The most significant challenge encountered was the difficulty in reliably classifying different directional commands *within* the "Inner Speech" condition.
-   - Both Day 1 and Day 2 analyses consistently showed classification accuracies hovering around chance level (~50%) for pairs like "Inner-Up" vs. "Inner-Down" or "Inner-Left" vs. "Inner-Right" ([#`logs/day1_devlog.md`](logs/day1_devlog.md), [`day2_devlog.md`](day2_devlog.md), [`day2_pairwise_results.csv`](day2_pairwise_results.csv)).
+   - Both Day 1 and Day 2 analyses consistently showed classification accuracies hovering around chance level (~50%) for pairs like "Inner-Up" vs. "Inner-Down" or "Inner-Left" vs. "Inner-Right" ([#`logs/day1_devlog.md`](logs/day1_devlog.md), [`day2_devlog.md`](day2_devlog.md), [`day2_pairwise_results.csv`](day2_pairwise_results.csv)). This is visually represented in the Day 1 results (Figure 3 showing near-chance accuracy and Figure 4 showing high confusion).
    - This suggests that the neural patterns associated with these specific inner speech commands, as captured by EEG and processed with the current methods (PSD, CSP), are highly similar and difficult to distinguish.
 
 **2. Signal-to-Noise Ratio (SNR):**
