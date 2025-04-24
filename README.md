@@ -1,5 +1,5 @@
 # Project Report: Decoding Inner Speech from EEG
-
+![alt text](day1_ui.png)
 ## Neuroscience Foundation and Data Acquisition
 
 This project aims to classify different types of inner speech (specifically directional thoughts like "Up", "Down", "Left", "Right") and related mental states using Electroencephalography (EEG) data.
